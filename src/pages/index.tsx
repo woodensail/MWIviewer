@@ -56,8 +56,8 @@ export default function HomePage() {
     const buffer = Buffer.from(dbStr, 'base64');
     const uint8Array = new Uint8Array(buffer);
     const db = new SQL.Database(uint8Array);
-    const ask = db.exec('select * from ask order by time desc limit 240')[0];
-    const bid = db.exec('select * from bid order by time desc limit 240')[0];
+    const ask = db.exec('select * from ask order by time desc limit 720')[0];
+    const bid = db.exec('select * from bid order by time desc limit 720')[0];
     const data = {
       ask,
       bid,
