@@ -1,12 +1,15 @@
 {
   "private": true,
   "author": "woodensail <woodensail@hotmail.com>",
+  "homepage": "https://woodensail.github.io/MWIviewer",
   "scripts": {
     "dev": "umi dev",
     "build": "umi build",
     "postinstall": "umi setup",
     "setup": "umi setup",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "predeploy" : "npm run build",
+    "deploy" : "gh-pages -d dist"
   },
   "dependencies": {
     "@ant-design/charts": "^2.2.7",
@@ -21,6 +24,7 @@
   "devDependencies": {
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "gh-pages": "^6.3.0",
     "typescript": "^5.8.2"
   }
 }
