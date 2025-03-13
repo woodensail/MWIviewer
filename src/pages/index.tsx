@@ -120,7 +120,7 @@ export default function HomePage() {
       date: data[0],
       price: data[selectedItem],
       type: '买价'
-    }))].reverse()
+    }))].filter((data) => data.price!==-1).reverse()
     // const datas = allData.ask.values
     // return datas.map((_: any, index: number) => {
     //   return {
