@@ -1,11 +1,14 @@
-export async function readableStreamToBase64(stream) {
+export async function readableStreamToBase64(stream: any, onProgress?: (size: number) => void) {
   const reader = stream.getReader();
   const chunks = [];
 
   // 读取流中的所有数据块
+  let totalBytesRead = 0;
   while (true) {
-    const { done, value } = await reader.read();
+    const {done, value} = await reader.read();
     if (done) break;
+    totalBytesRead += value?.length ?? 0
+    onProgress?.(totalBytesRead)
     chunks.push(value);
   }
 
@@ -23,7 +26,7 @@ export async function readableStreamToBase64(stream) {
 }
 
 // 将 Uint8Array 转换为 Base64 的辅助函数
-function uint8ArrayToBase64(uint8Array) {
-  const binaryString = Array.from(uint8Array).map(byte => String.fromCharCode(byte)).join("");
+function uint8ArrayToBase64(uint8Array: any) {
+  const binaryString = Array.from(uint8Array).map((byte: any) => String.fromCharCode(byte)).join("");
   return btoa(binaryString);
 }

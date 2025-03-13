@@ -8,8 +8,8 @@ import initSqlJs from 'sql.js'
 import LZString from 'lz-string'
 import dayjs from 'dayjs'
 import {useRequest} from 'ahooks'
-import {Button, Select} from 'antd'
-import {useParams, useSearchParams} from '@@/exports';
+import {Alert, Button, Progress, Select} from 'antd'
+import bytesToSize from "@/utils/bytes-to-size";
 import styles from './index.module.less'
 
 const SQL = await initSqlJs({
@@ -45,10 +45,14 @@ export default function HomePage() {
   const [allData, setAllData] = useState<any>(null)
   // const [selectedItems, setSelectedItems] = useState([])
   const [selectedItem, setSelectedItem] = useState()
+  const [progress, setProgress] = useState(0)
+  const [fullSize, setFullSize] = useState(0)
 
   const {run: loadDb, loading} = useRequest(async function (first: boolean) {
+    setProgress(0)
     const res = await fetch('https://raw.githubusercontent.com/holychikenz/MWIApi/main/market.db')
-    const dbStr = await readableStreamToBase64(res.body)
+    setFullSize(Number(res.headers.get('content-length') || 1))
+    const dbStr = await readableStreamToBase64(res.body, setProgress)
     const buffer = Buffer.from(dbStr, 'base64');
     const uint8Array = new Uint8Array(buffer);
     const db = new SQL.Database(uint8Array);
@@ -88,10 +92,10 @@ export default function HomePage() {
     })
     setItemOptions(items.map((([en, zh]) => {
       // console.log(en,searchItem , zh,searchItem)
-      if(first ){
+      if (first) {
         const searchParams = new URLSearchParams(location.search)
         const searchItem = searchParams.get('item')
-        if((en===searchItem || zh===searchItem)){
+        if ((en === searchItem || zh === searchItem)) {
           setSelectedItem(indexMap[en])
         }
       }
@@ -137,6 +141,11 @@ export default function HomePage() {
                 }}/>
         <Button loading={loading} onClick={() => loadDb(false)}>刷新数据</Button>
       </div>
+      {loading && <>
+        {fullSize && <Progress percent={Math.floor(progress / Number(fullSize) * 100)}/>}
+        <Alert message={`数据库文件较大，请耐心等待，当前进度: ${bytesToSize(progress)} / ${bytesToSize(fullSize)}`}
+               type="warning"/>
+      </>}
 
       {chartData && <Line {...config} data={chartData}/>}
     </div>
