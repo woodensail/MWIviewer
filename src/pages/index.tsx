@@ -9,6 +9,7 @@ import LZString from 'lz-string'
 import dayjs from 'dayjs'
 import {useRequest} from 'ahooks'
 import {Button, Select} from 'antd'
+import {useParams, useSearchParams} from '@@/exports';
 import styles from './index.module.less'
 
 const SQL = await initSqlJs({
@@ -43,9 +44,9 @@ export default function HomePage() {
   const [itemOptions, setItemOptions] = useState<any>([])
   const [allData, setAllData] = useState<any>(null)
   // const [selectedItems, setSelectedItems] = useState([])
-  const [selectedItem, setSelectedItem] = useState(231)
+  const [selectedItem, setSelectedItem] = useState()
 
-  const {run: loadDb, loading} = useRequest(async function () {
+  const {run: loadDb, loading} = useRequest(async function (first: boolean) {
     const res = await fetch('https://raw.githubusercontent.com/holychikenz/MWIApi/main/market.db')
     const dbStr = await readableStreamToBase64(res.body)
     const buffer = Buffer.from(dbStr, 'base64');
@@ -60,37 +61,47 @@ export default function HomePage() {
     }
     const dataStr = LZString.compress(JSON.stringify(data))
     localStorage.setItem('MWIviewer_data', dataStr)
-    init(data)
+    init(data, first)
     return data
   }, {manual: true})
 
   useEffect(() => {
     const dataStr = localStorage.getItem('MWIviewer_data')
     if (!dataStr) {
-      loadDb()
+      loadDb(true)
     } else {
       const data = JSON.parse(LZString.decompress(dataStr))
       if (data.time >= Date.now() - 1000 * 60 * 60 * 24) {
-        init(data)
+        init(data, true)
       } else {
-        loadDb()
+        loadDb(true)
       }
     }
   }, []);
 
-  function init(data: any) {
+  function init(data: any, first: boolean) {
     const columns = data.ask.columns
     setAllData(data)
     const indexMap: any = {}
     columns.forEach((column: string, index: number) => {
       indexMap[column] = index
     })
-    setItemOptions(items.map((([en, zh]) => ({
-      value: indexMap[en],
-      en,
-      zh,
-      label: zh
-    }))).filter((item) => item.value))
+    setItemOptions(items.map((([en, zh]) => {
+      // console.log(en,searchItem , zh,searchItem)
+      if(first ){
+        const searchParams = new URLSearchParams(location.search)
+        const searchItem = searchParams.get('item')
+        if((en===searchItem || zh===searchItem)){
+          setSelectedItem(indexMap[en])
+        }
+      }
+      return {
+        value: indexMap[en],
+        en,
+        zh,
+        label: zh
+      }
+    })).filter((item) => item.value))
   }
 
   const chartData = useMemo(() => {
@@ -124,7 +135,7 @@ export default function HomePage() {
                 filterOption={(input, option: any) => {
                   return option.en.toLowerCase().includes(input.toLowerCase()) || option.zh?.includes?.(input)
                 }}/>
-        <Button loading={loading} onClick={loadDb}>刷新数据</Button>
+        <Button loading={loading} onClick={() => loadDb(false)}>刷新数据</Button>
       </div>
 
       {chartData && <Line {...config} data={chartData}/>}
