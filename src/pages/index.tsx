@@ -50,10 +50,13 @@ export default function HomePage() {
   const [changeSourceFlag, setChangeSourceFlag] = useLocalStorageState<string>('MWIviewer_changeSourceFlag', {defaultValue: '1',});
   const [historyLimit, setHistoryLimit] = useLocalStorageState<string>('MWIviewer_historyLimit', {defaultValue: '0',});
   const [source, setSource] = useLocalStorageState<string>('MWIviewer_source', {defaultValue: 'https://raw.gitmirror.com',});
+  const abortRef = useRef<any>(null)
 
   const {run: loadDb, loading, cancel} = useRequest(async function (first: boolean) {
+    abortRef.current?.abort()
+    const abortController = abortRef.current = new AbortController()
     setProgress(0)
-    const res = await fetch(`${source}/holychikenz/MWIApi/main/market.db`)
+    const res = await fetch(`${source}/holychikenz/MWIApi/main/market.db`,{signal: abortController.signal})
     setFullSize(Number(res.headers.get('content-length') || 1))
     const dbStr = await readableStreamToBase64(res.body, setProgress)
     const buffer = Buffer.from(dbStr, 'base64');
