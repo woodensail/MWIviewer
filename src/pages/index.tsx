@@ -7,8 +7,8 @@ import {Line} from '@ant-design/charts';
 import initSqlJs from 'sql.js'
 import LZString from 'lz-string'
 import dayjs from 'dayjs'
-import {useRequest} from 'ahooks'
-import {Alert, Button, Progress, Select} from 'antd'
+import {useRequest, useLocalStorageState} from 'ahooks'
+import {Alert, Button, Progress, Select, Switch} from 'antd'
 import bytesToSize from "@/utils/bytes-to-size";
 import styles from './index.module.less'
 
@@ -44,13 +44,16 @@ export default function HomePage() {
   const [itemOptions, setItemOptions] = useState<any>([])
   const [allData, setAllData] = useState<any>(null)
   // const [selectedItems, setSelectedItems] = useState([])
-  const [selectedItem, setSelectedItem] = useState()
+  const [selectedItem, setSelectedItem] = useLocalStorageState<string>('MWIviewer_selectedItem', {defaultValue: '231',});
   const [progress, setProgress] = useState(0)
   const [fullSize, setFullSize] = useState(0)
+  const [changeSourceFlag, setChangeSourceFlag] = useLocalStorageState<string>('MWIviewer_changeSourceFlag', {defaultValue: '1',});
+  const [historyLimit, setHistoryLimit] = useLocalStorageState<string>('MWIviewer_historyLimit', {defaultValue: '0',});
 
   const {run: loadDb, loading} = useRequest(async function (first: boolean) {
     setProgress(0)
-    const res = await fetch('https://raw.gitmirror.com/holychikenz/MWIApi/main/market.db')
+    const url = changeSourceFlag === '1' ? 'https://raw.gitmirror.com/holychikenz/MWIApi/main/market.db' : 'https://raw.githubusercontent.com/holychikenz/MWIApi/main/market.db'
+    const res = await fetch(url)
     setFullSize(Number(res.headers.get('content-length') || 1))
     const dbStr = await readableStreamToBase64(res.body, setProgress)
     const buffer = Buffer.from(dbStr, 'base64');
@@ -110,7 +113,8 @@ export default function HomePage() {
 
   const chartData = useMemo(() => {
     if (!allData || !selectedItem) return null
-    return [...allData.ask.values.map((data: any) => ({
+    const newestDate = allData.ask.values[0][0]
+    const all = [...allData.ask.values.map((data: any) => ({
       dateStr: dayjs(data[0] * 1e3).format('MM-DD HH点'),
       date: data[0],
       price: data[selectedItem],
@@ -120,7 +124,14 @@ export default function HomePage() {
       date: data[0],
       price: data[selectedItem],
       type: '买价'
-    }))].filter((data) => data.price!==-1).reverse()
+    }))].filter((data) => data.price !== -1).reverse()
+    if (historyLimit === '0') {
+      return all
+    } else {
+      return all.filter((data: any) => {
+        return data.date > newestDate - 60 * 60 * 24 * Number(historyLimit)
+      })
+    }
     // const datas = allData.ask.values
     // return datas.map((_: any, index: number) => {
     //   return {
@@ -129,7 +140,7 @@ export default function HomePage() {
     //     low: allData.ask.values[index][selectedItem],
     //   }
     // })
-  }, [allData, selectedItem])
+  }, [allData, selectedItem, historyLimit])
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -139,6 +150,17 @@ export default function HomePage() {
                 filterOption={(input, option: any) => {
                   return option.en.toLowerCase().includes(input.toLowerCase()) || option.zh?.includes?.(input)
                 }}/>
+        <span>
+        显示最近
+        <Select value={historyLimit} onSelect={setHistoryLimit} style={{width: 100, margin: '0 8px'}} options={[
+          {value: '0', label: '所有'},
+          {value: '14', label: '2周'},
+          {value: '7', label: '1周'},
+          {value: '3', label: '3天'},
+          {value: '1', label: '1天'}]}/>的数据</span>
+        <span><Switch style={{marginRight: 8}} checked={changeSourceFlag === '1'}
+                      onChange={flag => setChangeSourceFlag(flag ? '1' : '0')}/>使用国内镜像数据源</span>
+
         <Button loading={loading} onClick={() => loadDb(false)}>刷新数据</Button>
       </div>
       {loading && <>
