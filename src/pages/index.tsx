@@ -50,7 +50,7 @@ export default function HomePage() {
 
   const {run: loadDb, loading} = useRequest(async function (first: boolean) {
     setProgress(0)
-    const res = await fetch('https://raw.githubusercontent.com/holychikenz/MWIApi/main/market.db')
+    const res = await fetch('https://raw.gitmirror.com/holychikenz/MWIApi/main/market.db')
     setFullSize(Number(res.headers.get('content-length') || 1))
     const dbStr = await readableStreamToBase64(res.body, setProgress)
     const buffer = Buffer.from(dbStr, 'base64');
