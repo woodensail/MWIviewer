@@ -49,11 +49,11 @@ export default function HomePage() {
   const [fullSize, setFullSize] = useState(0)
   const [changeSourceFlag, setChangeSourceFlag] = useLocalStorageState<string>('MWIviewer_changeSourceFlag', {defaultValue: '1',});
   const [historyLimit, setHistoryLimit] = useLocalStorageState<string>('MWIviewer_historyLimit', {defaultValue: '0',});
+  const [source, setSource] = useLocalStorageState<string>('MWIviewer_source', {defaultValue: 'https://raw.gitmirror.com',});
 
-  const {run: loadDb, loading} = useRequest(async function (first: boolean) {
+  const {run: loadDb, loading, cancel} = useRequest(async function (first: boolean) {
     setProgress(0)
-    const url = changeSourceFlag === '1' ? 'https://raw.gitmirror.com/holychikenz/MWIApi/main/market.db' : 'https://raw.githubusercontent.com/holychikenz/MWIApi/main/market.db'
-    const res = await fetch(url)
+    const res = await fetch(`${source}/holychikenz/MWIApi/main/market.db`)
     setFullSize(Number(res.headers.get('content-length') || 1))
     const dbStr = await readableStreamToBase64(res.body, setProgress)
     const buffer = Buffer.from(dbStr, 'base64');
@@ -91,7 +91,7 @@ export default function HomePage() {
     setAllData(data)
     const indexMap: any = {}
     columns.forEach((column: string, index: number) => {
-      indexMap[column] = index+''
+      indexMap[column] = index + ''
     })
     setItemOptions(items.map((([en, zh]) => {
       // console.log(en,searchItem , zh,searchItem)
@@ -151,16 +151,23 @@ export default function HomePage() {
                   return option.en.toLowerCase().includes(input.toLowerCase()) || option.zh?.includes?.(input)
                 }}/>
         <span>
-        显示最近
-        <Select value={historyLimit} onSelect={setHistoryLimit} style={{width: 100, margin: '0 8px'}} options={[
-          {value: '0', label: '所有'},
-          {value: '14', label: '2周'},
-          {value: '7', label: '1周'},
-          {value: '3', label: '3天'},
-          {value: '1', label: '1天'}]}/>的数据</span>
-        <span><Switch style={{marginRight: 8}} checked={changeSourceFlag === '1'}
-                      onChange={flag => setChangeSourceFlag(flag ? '1' : '0')}/>使用国内镜像数据源</span>
-
+          显示最近
+          <Select value={historyLimit} onSelect={setHistoryLimit} style={{width: 100, margin: '0 8px'}} options={[
+            {value: '0', label: '所有'},
+            {value: '14', label: '2周'},
+            {value: '7', label: '1周'},
+            {value: '3', label: '3天'},
+            {value: '1', label: '1天'}]}/>的数据
+        </span>
+        <span>
+        选择数据源
+        <Select value={source} onSelect={(target)=> {
+          setSource(target)
+          cancel()
+        }} style={{width: 100, margin: '0 8px'}} options={[
+          {value: 'https://raw.githubusercontent.com', label: '原始数据'},
+          {value: 'https://raw.gitmirror.com', label: 'gitmirror'}]}/>
+        </span>
         <Button loading={loading} onClick={() => loadDb(false)}>刷新数据</Button>
       </div>
       {loading && <>
