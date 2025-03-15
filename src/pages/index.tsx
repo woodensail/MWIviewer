@@ -91,7 +91,7 @@ export default function HomePage() {
     setAllData(data)
     const indexMap: any = {}
     columns.forEach((column: string, index: number) => {
-      indexMap[column] = index
+      indexMap[column] = index+''
     })
     setItemOptions(items.map((([en, zh]) => {
       // console.log(en,searchItem , zh,searchItem)
