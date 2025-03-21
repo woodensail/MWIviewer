@@ -56,7 +56,7 @@ export default function HomePage() {
     abortRef.current?.abort()
     const abortController = abortRef.current = new AbortController()
     setProgress(0)
-    const res = await fetch(`${source}/holychikenz/MWIApi/main/market.db`,{signal: abortController.signal})
+    const res = await fetch(`${source}/holychikenz/MWIApi/refs/heads/main/market.db`,{signal: abortController.signal})
     setFullSize(Number(res.headers.get('content-length') || 1))
     const dbStr = await readableStreamToBase64(res.body, setProgress)
     const buffer = Buffer.from(dbStr, 'base64');
@@ -168,6 +168,7 @@ export default function HomePage() {
           cancel()
         }} style={{width: 100, margin: '0 8px'}} options={[
           {value: 'https://raw.githubusercontent.com', label: '原始数据'},
+          {value: 'https://ghproxy.net/https://raw.githubusercontent.com', label: 'ghproxy'},
           {value: 'https://raw.gitmirror.com', label: 'gitmirror'}]}/>
         </span>
         <Button loading={loading} onClick={() => loadDb(false)}>刷新数据</Button>
