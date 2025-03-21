@@ -81,10 +81,9 @@ export default function HomePage() {
       loadDb(true)
     } else {
       const data = JSON.parse(LZString.decompress(dataStr))
+      init(data, true)
       if (data.time >= Date.now() - 1000 * 60 * 60 * 24) {
-        init(data, true)
-      } else {
-        loadDb(true)
+        loadDb(false)
       }
     }
   }, []);
